@@ -1,10 +1,6 @@
 # ETL Program for Trip Data Processing
 
  After running the program, the table contains **26,805 rows**.  
- 
-### Resource Management
- It uses `IDisposable` for objects holding external resources—`SqlConnection`, `SqlBulkCopy`, `StreamReader` / `StreamWriter`, and `CsvReader` / `CsvWriter`— to ensure file handles and database connections are reliably released even if an error occurs. This prevents locked files and leaked connections.  
----
 
 ## Schema Optimization
 
@@ -64,7 +60,9 @@ If the program is used on much larger files:
 - Increase bulk insert batch size and adjust database timeouts for better performance.  
 ---
 
-## SQL scripts
+## SQL Scripts
+
+```sql
 USE CabEtlDb;
 GO
 
