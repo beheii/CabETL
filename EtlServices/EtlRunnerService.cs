@@ -10,13 +10,13 @@ namespace CabETL.EtlServices
     {
         private readonly IDataReaderService _reader;
         private readonly IDataParserService _parser;
-        private readonly DeduplicationService _deduplicator;
+        private readonly IDeduplicationService _deduplicator;
         private readonly IBulkInsertService _bulkInserter;
 
         public EtlRunnerService(
             IDataReaderService reader,
             IDataParserService parser,
-            DeduplicationService deduplicator,
+            IDeduplicationService deduplicator,
             IBulkInsertService bulkInserter)
         {
             _reader = reader;

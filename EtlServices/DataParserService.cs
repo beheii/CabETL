@@ -55,7 +55,15 @@ namespace CabETL.EtlServices
                     TipAmount = tipAmount
                 };
             }
-            catch
+            catch (FormatException)
+            {
+                return null;
+            }
+            catch (OverflowException)
+            {
+                return null;
+            }
+            catch (ArgumentException)
             {
                 return null;
             }
@@ -95,17 +103,26 @@ namespace CabETL.EtlServices
 
         private static bool TryParseDecimal(string? value, out decimal result)
         {
-            return decimal.TryParse((value ?? "0").Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out result);
+            result = default;
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+            return decimal.TryParse(value.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out result);
         }
 
         private static bool TryParseInt(string? value, out int result)
         {
-            return int.TryParse((value ?? "0").Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out result);
+            result = default;
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+            return int.TryParse(value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out result);
         }
 
         private static bool TryParseByte(string? value, out byte result)
         {
-            return byte.TryParse((value ?? "0").Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out result);
+            result = default;
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+            return byte.TryParse(value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out result);
         }
 
         private static string NormalizeStoreAndFwdFlag(string? value)

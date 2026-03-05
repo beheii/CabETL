@@ -1,14 +1,14 @@
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using CabETL.Interfaces;
 using CabETL.Models;
 using CsvHelper;
 using CsvHelper.Configuration;
 
 namespace CabETL.EtlServices
 {
-    public class DeduplicationService
+    public class DeduplicationService : IDeduplicationService
     {
         public IEnumerable<ProcessedTripRow> FilterUniques(IEnumerable<ProcessedTripRow> source, string duplicatesCsvPath)
         {

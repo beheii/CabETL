@@ -27,7 +27,7 @@ namespace CabETL.EtlServices
             {
                 DestinationTableName = "dbo.Trips",
                 BatchSize = _batchSize,
-                BulkCopyTimeout = 0
+                BulkCopyTimeout = 300
             };
 
             bulkCopy.ColumnMappings.Add("tpep_pickup_datetime", "tpep_pickup_datetime");

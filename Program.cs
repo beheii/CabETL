@@ -17,6 +17,7 @@ namespace CabETL
                 if (args.Length < 2)
                 {
                     Console.WriteLine("Usage: dotnet run -- \"<path-to-cabData.csv>\" \"<path-to-duplicates.csv>\"");
+                    Environment.ExitCode = 1;
                     return;
                 }
 
@@ -44,7 +45,7 @@ namespace CabETL
                 services.AddSingleton<IDbConnectionFactory>(_ => new DbConnectionFactory(connectionString));
                 services.AddTransient<IDataReaderService, DataReaderService>();
                 services.AddTransient<IDataParserService, DataParserService>();
-                services.AddTransient<DeduplicationService>();
+                services.AddTransient<IDeduplicationService, DeduplicationService>();
                 services.AddTransient<IBulkInsertService, BulkInsertService>();
                 services.AddTransient<IEtlRunnerService, EtlRunnerService>();
 
@@ -56,7 +57,8 @@ namespace CabETL
 
                 if (!File.Exists(csvPath))
                 {
-                    Console.WriteLine("Input CSV file not found.");
+                    Console.WriteLine("Input CSV file not found: " + csvPath);
+                    Environment.ExitCode = 1;
                     return;
                 }
 
