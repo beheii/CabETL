@@ -1,8 +1,9 @@
 # ETL Program for Trip Data Processing
 
  After running the program, the table contains **26,805 rows**.  
-
-It uses `IDisposable` for objects holding external resources—`SqlConnection`, `SqlBulkCopy`, `StreamReader` / `StreamWriter`, and `CsvReader` / `CsvWriter`— to ensure file handles and database connections are reliably released even if an error occurs. This prevents locked files and leaked connections.  
+ 
+### Resource Management
+ It uses `IDisposable` for objects holding external resources—`SqlConnection`, `SqlBulkCopy`, `StreamReader` / `StreamWriter`, and `CsvReader` / `CsvWriter`— to ensure file handles and database connections are reliably released even if an error occurs. This prevents locked files and leaked connections.  
 ---
 
 ## Schema Optimization
