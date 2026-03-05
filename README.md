@@ -55,9 +55,9 @@
 
 If the program is used on much larger files:  
 
-- Avoid using an in-memory `HashSet` for duplicate removal; process data in smaller chunks, clearing memory after each.  
-- Stream files line by line and switch to asynchronous I/O for reading and writing.  
-- Increase bulk insert batch size and adjust database timeouts for better performance.  
+- For deleting duplicates, I would avoid using an in-memory HashSet, since it might not handle very large datasets. I would process the data in smaller chunks, remove duplicates within each chunk, then clear memory and continue with the next portion.
+- I would keep streaming the file line by line and switch to async I O for reading and writing.
+- Increase bulk insert batch size, and adjust database timeouts.
 ---
 
 ## SQL Scripts
