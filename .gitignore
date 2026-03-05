@@ -1,0 +1,11 @@
+
+data/
+
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+
+.vs/
+
+appsettings.json
