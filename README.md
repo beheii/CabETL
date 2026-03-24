@@ -1,100 +1,61 @@
-# ETL Program for Trip Data Processing
+# Taxi ETL CLI (C#)
 
- After running the program, the table contains **26,805 rows**.  
+## Overview
 
-## Schema Optimization
+This project is a simple ETL (Extract, Transform, Load) CLI application written in C#. It processes taxi trip data from a CSV file and loads it into a SQL Server database. The application focuses on efficient data processing, validation, and bulk insertion, while handling potentially unsafe input data.
 
-### Highest Average Tip by `PULocationID`
-- Added a nonclustered index on `PULocationID`.  
-- **With index:** 16 ms CPU / 66 ms elapsed, using a **stream aggregate**.  
-- **Without index:** 32 ms CPU / 134 ms elapsed, using a **hash aggregate**.  
-- The index improves aggregation performance significantly.  
-
-### Top 100 Longest Trips by `trip_distance`
-- Added a nonclustered index on `trip_distance`.  
-- **With index:** 15 ms CPU / 226 ms elapsed, using **nested loops** with **key lookups**.  
-- **Without index:** 63 ms CPU / 443 ms elapsed, performing a full table scan.  
-
-### Top 100 Longest Trips by Duration
-- Added a nonclustered index on the computed `trip_duration_minutes` column.  
-- **With index:** 0 ms CPU / 285 ms elapsed, using **nested loops** with an **index scan**.  
-- **Without index:** 62 ms CPU / 490 ms elapsed, scanning the entire table.  
-
-### Why a Wide Covering Index Was Not Added
-- A nonclustered index on `PULocationID` alone does not significantly speed up queries like `SELECT * FROM dbo.Trips WHERE PULocationID = 40`.  
-- A full covering index would avoid lookups but would almost duplicate the table, increasing storage and write costs.  
-- Since exact read patterns are unknown, the simple index is retained, accepting current performance.  
 ---
 
-## Data Handling
+## Features
 
-- Input data is converted to **UTC** when inserted into the database.  
-- Each row is validated field by field:  
-  - Numeric values use `TryParse`; invalid or out-of-range rows are skipped.  
-  - String fields are trimmed and checked against basic business rules.  
-- Only cleaned records are bulk inserted into SQL Server via `SqlBulkCopy`, minimizing SQL injection risks.  
+- Streaming CSV processing (no full file load into memory)
+- Data validation and cleaning
+- Duplicate detection and export to `duplicates.csv`
+- Conversion of `store_and_fwd_flag` values (`Y/N` → `Yes/No`)
+- Trimming of all text fields
+- Timezone conversion from EST to UTC
+- Bulk insert into SQL Server using `SqlBulkCopy`
+- Optimized database schema and indexes for analytical queries
+
 ---
 
-## Business Rules and Assumptions
+## Technologies Used
 
-- **Trip distance:** Interpreted as kilometers; rows with `trip_distance < 0.5` are removed. This threshold was chosen based on data exploration (no significant spike was noticed at all). 
-- **Passenger count:** Must be `>= 1`. A trip without at least one passenger is considered invalid.
-- **Fare amount:** Must be `> 0`.  A completed fare with a non positive amount is assumed to be invalid.
-- **Tip amount:** Must be `>= 0`.  Tips can legitimately be zero or any positive value.
-- **Trip duration:** Must be `<= 200` minutes; longer trips are treated as outliers. (there was a significant spike in data).
-- **Pickup vs dropoff:** `PULocationID != DOLocationID`.  Trips that start and end in exactly the same zone are excluded.
-- **Time ordering:** `tpep_pickup_datetime < tpep_dropoff_datetime`. A ride must start before it can finish; rows violating this are discarded.  
+- C#
+- .NET (CLI application)
+- SQL Server
+- ADO.NET (`SqlConnection`, `SqlBulkCopy`)
+- CsvHelper
+
 ---
 
-## Additional Considerations
+## How It Works
 
-- If we find price for ride per km for each row, we would be able to define which rows are outliers. The disadvantage is that we cannot decide for sure what price/km is reasonable and realistic. 
+1. Reads CSV file in a streaming manner  
+2. Parses and validates each record  
+3. Converts:
+   - Dates (EST → UTC)
+   - `Y/N` → `Yes/No`  
+4. Trims all text values  
+5. Writes duplicates into `duplicates.csv`  
+6. Inserts valid records into SQL Server using batch bulk insert  
+
 ---
 
-## Large Dataset Strategy
+## Handling Unsafe Data
 
-If the program is used on much larger files:  
+The application assumes the CSV source is unsafe and applies:
 
-- For deleting duplicates, I would avoid using an in-memory HashSet, since it might not handle very large datasets. I would process the data in smaller chunks, remove duplicates within each chunk, then clear memory and continue with the next portion.
-- I would keep streaming the file line by line and switch to async I O for reading and writing.
-- Increase bulk insert batch size, and adjust database timeouts.
+- `TryParse` for all numeric and date fields  
+- Explicit date format parsing  
+- Range validation (e.g. no negative values)  
+- Skipping malformed records  
+- No dynamic SQL (prevents injection)  
+
 ---
 
-## SQL Scripts
+## Output
 
-```sql
-USE CabEtlDb;
-GO
-
-CREATE TABLE dbo.Trips
-(
-    TripId BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    tpep_pickup_datetime DATETIME2(0) NOT NULL,   
-    tpep_dropoff_datetime DATETIME2(0) NOT NULL,    
-    passenger_count TINYINT NOT NULL,
-    trip_distance DECIMAL(10,2) NOT NULL,
-    store_and_fwd_flag VARCHAR(3) NOT NULL,   
-    PULocationID INT NOT NULL,
-    DOLocationID INT NOT NULL,
-    fare_amount DECIMAL(10,2) NOT NULL,
-    tip_amount DECIMAL(10,2) NOT NULL,
-    -- to visualize and understand data better
-    trip_duration_minutes AS DATEDIFF(MINUTE, tpep_pickup_datetime, tpep_dropoff_datetime) PERSISTED
-);
-GO
-
--- optimization for avg highest tip in PU search
-CREATE NONCLUSTERED INDEX IX_Trips_PULocationID
-ON dbo.Trips (PULocationID)
-INCLUDE (tip_amount);
-GO
-
--- optimization for top 100 longest by distance
-CREATE NONCLUSTERED INDEX IX_Trips_TripDistance
-ON dbo.Trips (trip_distance DESC);
-GO
-
--- optimization for top 100 longest by time
-CREATE NONCLUSTERED INDEX IX_Trips_TripDuration
-ON dbo.Trips (trip_duration_minutes DESC);
-GO
+- Cleaned data inserted into `TaxiTrips` table  
+- Duplicate records saved to `duplicates.csv`  
+- Total inserted rows can be checked with:
